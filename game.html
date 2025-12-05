@@ -360,7 +360,16 @@
             draggableItem.style.transition = 'all 0.3s'; 
             
             const touch = e.changedTouches[0];
+
+            // 修正步驟 1：暫時隱藏拖曳物，讓程式碼能看到下方的 Drop Zone
+            draggableItem.style.display = 'none'; 
+
+            // 修正步驟 2：檢查釋放點下方的元素
             const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // 修正步驟 3：立即恢復顯示拖曳物
+            draggableItem.style.display = 'flex'; // 恢復為原本的 flex 顯示
+
             const zone = dropTarget ? dropTarget.closest('.drop-zone') : null;
 
             if (zone) {
