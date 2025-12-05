@@ -1,0 +1,2 @@
+# zhuyin
+zhuyinGame for Yuzu
