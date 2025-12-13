@@ -23,6 +23,18 @@
             align-items: center;
             height: 0; 
         }
+		
+		/* --- 新增的遊戲說明樣式 --- */
+        #instructions {
+            font-size: 0.9em;
+            color: #4a4a4a;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            padding: 5px 10px;
+            background-color: #ffe0b2; /* 淺橘黃色背景強調提示 */
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
 
         /* --- 計分板 --- */
         .scoreboard {
@@ -154,6 +166,9 @@
     </div>
 
     <h2>🌲 ㄣㄥ魔法森林</h2>
+	<p id="instructions">
+        💡 **遊戲說明：** 請將畫面中央的字**拖曳**到左右邊正確發音的區域中。
+    </p>
     <div id="feedback">正在載入題庫...</div>
 
     <div class="game-container">
