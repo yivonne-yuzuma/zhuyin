@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>相似字打地鼠</title>
+    <style>
+        :root { --primary: #4CAF50; --secondary: #FFC107; --error: #F44336; }
+        body { margin: 0; padding: 0; overflow: hidden; font-family: "Microsoft JhengHei", sans-serif; background: linear-gradient(to bottom, #8BC34A 0%, #CDDC39 100%); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        
+        #game-area {
+            position: relative;
+            width: 90vw;
+            max-width: 800px;
+            height: 70vh;
+            max-height: 600px;
+            background: #A1887F; /* 泥土色 */
+            border-radius: 20px;
+            border: 10px solid #795548;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-content: space-around;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .mole-hole {
+            width: 30%;
+            height: 30%;
+            background: #5D4037; /* 洞口深色 */
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end; /* 讓文字從下方冒出 */
+            justify-content: center;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .mole-word {
+            position: absolute;
+            bottom: -100%; /* 初始在洞下面 */
+            width: 100%;
+            height: 100%;
+            background: #FFE082; /* 字的背景 */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: bottom 0.2s ease-out; /* 彈出動畫 */
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            user-select: none;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .mole-word.up { bottom: 0; } /* 彈出 */
+        .mole-word.hit { background: var(--success); color: white; transform: scale(0.9); } /* 擊中效果 */
+        .mole-word.miss { background: var(--error); color: white; } /* 錯誤效果 */
+
+
+        #quiz-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 15px 30px;
+            border-radius: 40px;
+            font-size: 38px;
+            font-weight: bold;
+            color: #333;
+            border: 4px solid var(--primary);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 100;
+            white-space: nowrap;
+        }
+
+        #stats {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 15px;
+            font-size: 24px;
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+
+        #timer-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 5%;
+            width: 90%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 100;
+        }
+        #time-remaining {
+            width: 100%;
+            height: 100%;
+            background: var(--secondary);
+            transition: width linear;
+        }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 200; color: white;
+            text-align: center;
+        }
+        .btn { background: var(--primary); border: none; padding: 15px 40px; color: white; font-size: 28px; border-radius: 50px; cursor: pointer; margin-top: 20px; }
+        .btn:hover { background: #5cb85c; }
+    </style>
+</head>
+<body>
+    <div id="game-area">
+        <div id="quiz-display">載入中...</div>
+        <div id="stats">
+            <span>❤️ <span id="hp">3</span></span>
+            <span>🏆 <span id="score">0</span></span>
+        </div>
+
+        <div class="mole-hole" id="hole-0"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-1"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-2"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-3"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-4"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-5"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-6"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-7"><div class="mole-word"></div></div>
+        <div class="mole-hole" id="hole-8"><div class="mole-word"></div></div>
+        
+        <div id="timer-bar"><div id="time-remaining"></div></div>
+    </div>
+
+    <div id="menu" class="overlay">
+        <h1>相似字打地鼠</h1>
+        <p style="font-size: 22px;">在限時內點擊正確的字或注音！</p>
+        <button class="btn" onclick="startGame()">開始遊戲</button>
+    </div>
+
+    <div id="game-over-screen" class="overlay" style="display:none;">
+        <h1>遊戲結束！</h1>
+        <p style="font-size: 28px;">你共打對了 <span id="final-score">0</span> 題。</p>
+        <button class="btn" onclick="location.reload()">再玩一次</button>
+    </div>
+
+    <script>
+        let allData = [];
+        let currentQuiz = null;
+        let hp = 3;
+        let score = 0;
+        let gameActive = false;
+        let moleWords = []; // 儲存地鼠洞裡的字元素
+        let timerInterval;
+        let roundTime = 5; // 每題的作答時間 (秒)
+        let timeRemaining = roundTime;
+
+        async function init() {
+            try {
+                const res = await fetch('quiz.json');
+                allData = await res.json();
+                moleWords = Array.from(document.querySelectorAll('.mole-word'));
+            } catch (e) {
+                alert("讀取 quiz.json 失敗，請確認檔案在同一個資料夾。");
+            }
+        }
+
+        function startGame() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('game-area').style.display = 'flex';
+            hp = 3; score = 0; updateStats();
+            gameActive = true;
+            nextRound();
+        }
+
+        function nextRound() {
+            if (!gameActive) return;
+
+            // 清理上一輪的字
+            moleWords.forEach(mw => {
+                mw.classList.remove('up', 'hit', 'miss');
+                mw.innerText = '';
+            });
+            clearTimeout(timerInterval); // 清除舊的計時器
+
+            currentQuiz = allData[Math.floor(Math.random() * allData.length)];
+            document.getElementById('quiz-display').innerText = currentQuiz.q;
+
+            const shuffledOptions = [...currentQuiz.options].sort(() => Math.random() - 0.5);
+            const selectedHoles = [];
+            
+            // 隨機選3個洞彈出
+            while(selectedHoles.length < 3) {
+                const randomIndex = Math.floor(Math.random() * moleWords.length);
+                if (!selectedHoles.includes(randomIndex)) {
+                    selectedHoles.push(randomIndex);
+                }
+            }
+
+            selectedHoles.forEach((holeIndex, i) => {
+                const wordEl = moleWords[holeIndex];
+                wordEl.innerText = shuffledOptions[i];
+                wordEl.onclick = () => handleMoleClick(wordEl, shuffledOptions[i]);
+                setTimeout(() => wordEl.classList.add('up'), 100 + i * 100); // 錯開彈出
+            });
+            
+            startTimer();
+        }
+
+        function handleMoleClick(clickedWordEl, clickedText) {
+            if (!gameActive || clickedWordEl.classList.contains('hit') || clickedWordEl.classList.contains('miss')) return;
+
+            if (clickedText === currentQuiz.ans) {
+                score++;
+                clickedWordEl.classList.add('hit');
+                // 答對音效可以加這裡
+                setTimeout(nextRound, 500); // 答對後快速進入下一題
+            } else {
+                hp--;
+                clickedWordEl.classList.add('miss');
+                // 答錯音效可以加這裡
+                updateStats();
+                if (hp <= 0) {
+                    gameOver();
+                } else {
+                    // 錯了不馬上換題，讓玩家看到正確答案
+                    setTimeout(() => {
+                        moleWords.forEach(mw => {
+                            if (mw.innerText === currentQuiz.ans) {
+                                mw.classList.add('hit'); // 顯示正確答案
+                            }
+                        });
+                        setTimeout(nextRound, 1000); // 錯了等1秒後換題
+                    }, 300);
+                }
+            }
+        }
+
+        function startTimer() {
+            timeRemaining = roundTime - (score / 20); // 分數越高，時間越短
+            if (timeRemaining < 2) timeRemaining = 2; // 最少2秒
+            document.getElementById('time-remaining').style.width = '100%';
+            clearTimeout(timerInterval);
+
+            const startTime = Date.now();
+            const updateBar = () => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                const remaining = Math.max(0, timeRemaining - elapsed);
+                document.getElementById('time-remaining').style.width = `${(remaining / timeRemaining) * 100}%`;
+                if (remaining <= 0) {
+                    // 時間到，沒打中
+                    hp--;
+                    updateStats();
+                    if (hp <= 0) {
+                        gameOver();
+                    } else {
+                        // 時間到沒打中，顯示正確答案再換題
+                        moleWords.forEach(mw => {
+                            if (mw.innerText === currentQuiz.ans) {
+                                mw.classList.add('hit');
+                            }
+                        });
+                        setTimeout(nextRound, 1000);
+                    }
+                } else {
+                    timerInterval = requestAnimationFrame(updateBar);
+                }
+            };
+            timerInterval = requestAnimationFrame(updateBar);
+        }
+
+        function updateStats() {
+            document.getElementById('hp').innerText = hp;
+            document.getElementById('score').innerText = score;
+        }
+
+        function gameOver() {
+            gameActive = false;
+            clearTimeout(timerInterval);
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+
+        init();
+    </script>
+</body>
+</html>
